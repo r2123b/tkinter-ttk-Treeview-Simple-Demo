@@ -1,1 +1,1 @@
-# tkinter-ttk-Treeview-Simple-Demo
+# tkinter ttk Treeview Simple Demo
