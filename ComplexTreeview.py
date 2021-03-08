@@ -71,45 +71,36 @@ class TableViewer():
 
 
     def arrangeLeftFrameUI(self):
-        # create a TreeView
+        # read data from file
+        dataFileDir = "./testData.csv"
+        if os.path.exists(dataFileDir):
+            self.tableData = pd.read_csv(dataFileDir)
+        
+        # create a TreeView with columns
+        colnames = self.tableData.columns
         self.tree = ttk.Treeview(self.leftframe)
-        self.tree["columns"] = ("Index", "Value")
-        self.tree.column("Index", stretch=True, width=150)
-        self.tree.column("Value", stretch=True, width=100)
-        self.tree.heading("Index", text="Index")
-        self.tree.heading("Value", text="Value")
+        self.tree["columns"] = tuple(colnames.values)
+        for col in colnames:
+            self.tree.column(column=col, width=100)
+            self.tree.heading(column=col, text=col)
+
+        # show all content
+        self.showAllData()
 
         # attach a scrollbar to the frame
         treeScroll = ttk.Scrollbar(self.leftframe)
         treeScroll.configure(command=self.tree.yview)
         self.tree.configure(yscrollcommand=treeScroll.set)
 
-        # read data from file
-        dataFileDir = "/Users/alumi/PycharmProjects/StocksInfoRetrieval/Data/data_mm.pkl"
-        if os.path.exists(dataFileDir):
-            self.tableData = pd.read_pickle(dataFileDir)
-        self.showAllData()
-
         # put tree and scroll beside each other in the left frame
         self.tree.pack(side=LEFT)
         treeScroll.pack(side=LEFT, fill=Y)
 
-    def insertItem2TreeView(self, itemText, values):
-        ### insert format -> insert(parent, index, iid=None, **kw)
-        ### reference: https://docs.python.org/3/library/tkinter.ttk.html#tkinter.ttk.Treeview
-        myItemID = self.tree.insert("", "end", text=itemText, values=(values[0], values[1]))
-
-        if myItemID == None:
-            return False
-        else:
-            return True
-
     def showAllData(self):
-        # first clear all
         self.tree.delete(*self.tree.get_children())
-        for i in range(0, self.tableData['HIGH'].size):
-            self.insertItem2TreeView("HIGH", [self.tableData['HIGH'].index[i], self.tableData['HIGH'].values[i]])
 
+        for i, row in self.tableData.iterrows():
+            self.tree.insert('', index=i, text="item"+str(i+1), values=tuple(row.values))
         self.updateStatusBar()
         # print("Tree View Count = " + str(len(self.tree.get_children())))
 
@@ -117,10 +108,8 @@ class TableViewer():
         self.currentCondition = "GREATER"
         self.tree.delete(*self.tree.get_children())
         comparedValue = float(self.ety_Greater.get())
-        for i in range(0, self.tableData['HIGH'].size):
-            if (self.tableData['HIGH'].values[i] > comparedValue):
-                self.insertItem2TreeView("HIGH", [self.tableData['HIGH'].index[i], self.tableData['HIGH'].values[i]])
-
+        for i, row in self.tableData[self.tableData['value']>=comparedValue].iterrows():
+            self.tree.insert('', index=i, text="item"+str(i+1), values=tuple(row.values))
         self.updateStatusBar()
         # print("Tree View Count = " + str(len(self.tree.get_children())))
 
@@ -128,10 +117,8 @@ class TableViewer():
         self.currentCondition = "LESS"
         self.tree.delete(*self.tree.get_children())
         comparedValue = float(self.ety_Less.get())
-        for i in range(0, self.tableData['HIGH'].size):
-            if (self.tableData['HIGH'].values[i] < comparedValue):
-                self.insertItem2TreeView("HIGH", [self.tableData['HIGH'].index[i], self.tableData['HIGH'].values[i]])
-
+        for i, row in self.tableData[self.tableData['value']<=comparedValue].iterrows():
+            self.tree.insert('', index=i, text="item"+str(i+1), values=tuple(row.values))
         self.updateStatusBar()
         # print("Tree View Count = " + str(len(self.tree.get_children())))
 
@@ -163,22 +150,9 @@ class TableViewer():
 
 
 ######### The following is for testing!!!
-def insert_loop(myGUI):
-    i=0
-    while(1):
-        # myGUI.insertItem2TreeView("Alumi", ["Test", 10])
-        myGUI.addNewData2TableData(i)
-        # myGUI.showAllData()
-        i += 1
-        time.sleep(10)
 
 if __name__ == '__main__':
     _rootWindow = Tk()
     myTableViewer = TableViewer(_rootWindow, "Table View")
-
-    try:
-        _thread.start_new_thread(insert_loop, (myTableViewer, ))
-    except:
-        print("Loop of insert is wrong!!\n")
-
+    
     _rootWindow.mainloop()
